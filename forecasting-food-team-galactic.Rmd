@@ -11,6 +11,17 @@ knitr::opts_chunk$set(echo = TRUE)
 pacman::p_load(shiny, tidyverse, plotly, readxl)
 ```
 
+```{r preprocessing include=FALSE}
+CPIHhistoricalwide<- CPIHistoricalData %>%
+  remove_missing() %>%
+  
+summary(CPIHhistoricalwide)
+
+
+CPIHhistoricallong<- CPIHhistoricalwide %>%
+  select('Comsumer Prize Index item', '1999', '2000', '2006')%>%
+  pivot_longer(!'Comsumer Prize Index item')
+```
 
 ```{r load data, include=FALSE}
 CPIForecastData <- read_excel("CPIForecast.xlsx",
