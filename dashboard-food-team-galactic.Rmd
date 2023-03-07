@@ -49,7 +49,7 @@ head(CPIHistoricalDataFrame)
 
 
 ## Introduction
-
+The consumer price index (CPI) for food is very important for the nourishment and survival of our species. Understanding the changes in the CPI helps us look at issues of food prices, insecurity, nutrition, and more. From our graphs, we would like to show the fluctuation in these food prices within each year, spanning from 1974-2022. 
 ## CPI Data {.tabset}
 
 ### Historical CPI
