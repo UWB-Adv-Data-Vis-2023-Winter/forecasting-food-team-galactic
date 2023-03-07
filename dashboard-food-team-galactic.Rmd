@@ -55,34 +55,42 @@ head(CPIHistoricalDataFrame)
 ### Historical CPI
 
 ```{r historical, echo=showcodeMode, message = debugMode, warning = debugMode}
-
-inputPanel(
+renderPlot({
+  CPIHistoricalDataFrame %>%
+    filter(item == "All food") %>%
+  ggplot(mapping = aes(x = year,
+                       y = percentChange,
+                       fill = percentChange)) + 
+  geom_col() + theme(aspect.ratio = 0.11)
+})
+  inputPanel(
   selectInput("cpiHistoricalItem", 
               label = "Item of showing in Graph",
               choices = unique(CPIHistoricalDataFrame$item),
               selected = "All food",
               multiple = TRUE),
   sliderInput("cpiHistoricalYear", label = "Year Range",
-              min = 1974, max = 2021, value = c(1974,2021), step = 1),
+              min = 1974, max = 2021, value = c(1974,2021), step = 1, sep = ""),
 )
 
+
+
 renderPlot({
-  ggplot(data = CPIHistoricalDataFrame,
-       mapping = aes(x = year,
-                     y = percentChange,
-                     color = item)) + 
-  geom_col() + guides(fill = FALSE) + 
-  theme(legend.position = "left") + 
-  labs(
-    x = NULL,
-    y = "Changes in Year",
-    title = "Historical CPI"
+    CPIHistoricalDataFrame %>%
+      filter(item %in% input$cpiHistoricalItem,
+             year >= min(input$cpiHistoricalYear[1]), 
+             year <= max(input$cpiHistoricalYear[2])) %>%
+    ggplot(mapping = aes(x = year,
+                         y = percentChange,
+                         color = item)) + 
+    geom_line() + guides(fill = TRUE) + 
+    theme(legend.position = "left") + 
+    labs(
+      x = NULL,
+      y = "Changes in Year",
+      title = "Historical CPI"
   )
 })
-renderDataTable(
-  CPIHistoricalDataFrame$item %>%
-  filter(item %in% input$cpiHistoricalItem)
-)
 head(CPIHistoricalDataRaw)
 
 ```
