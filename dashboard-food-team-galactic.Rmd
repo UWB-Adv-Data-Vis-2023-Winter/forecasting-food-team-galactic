@@ -97,6 +97,58 @@ head(CPIHistoricalDataRaw)
 
 ### Forecast CPI
 
-```{r forecast, echo=showcodeMode, message = debugMode, warning = debugMode}
+``` 
+CPIForecastWide <- CPIForecastData %>% 
+  remove_missing() %>% # remove the unused columns
+  mutate(`Consumer Price Index item` = as.factor(`Consumer Price Index item`)) %>% #Convert the CPI items into factors
+  mutate_if(is.character, as.numeric) %>% # Convert any columns that were assumed to be characters into numeric. We Could have specified the data types in the read_excel but this conversion is intuitive compared to multiple complex arguments to load data.
+  rename(cpiItem = `Consumer Price Index item`) %>%#Rename the item column to something easier to code
+  select(cpiItem, `Annual 2020`, `Annual 2021`, `Annual 2022`, ...10, )
+  
+colnames(CPIForecastWide) <- c('cpiItem','2020', '2021', '2022', '2023')
+  
 
+warnings() # view the warnings which show the blank rows being removed and the "N/A" values being converted into NA.
+
+CPIForecastWide$cpiItem
+
+CPIForecastWide <- CPIForecastWide %>%
+  mutate(level = case_when((cpiItem %in% c('All food'))~ 1,
+                           (cpiItem %in% c('Food away from home','Food at home')) ~ 2,
+                           (cpiItem %in% c('Meats, poultry, and fish', 'Eggs', 'Dairy products', 'Fats and oils', 'Fruits and vegetables', 'Sugar and sweets','Cereals and bakery products', 'Nonalcoholic beverages', 'Other foods')) ~ 3,
+                           (cpiItem %in% c('Meats', 'Poultry', 'Fish and seafood', 'Fresh fruits and vegetables', 'Processed fruits and vegetables')) ~ 4,
+                           (cpiItem %in% c('Beef and veal', 'Pork', 'Other meats', 'Fresh fruits', 'Fresh vegetables')) ~ 5,
+                           TRUE ~ 0
+                           ),
+         level = as.factor(level) #convert the new values into a factor
+         )
+
+CPIForecastWide %>% # check to make sure each of the categories is at their appropriate level
+  select(cpiItem, level) %>%
+  view()
+
+CPIForecastLong <- CPIForecastWide %>% #Pivot the wide data set to minimize the number of columns, making it easier to visualize and create drill down functions.
+  pivot_longer(cols = !c(cpiItem, level)) %>%
+  rename(year = name, percentchange = value) %>% #rename the columns to meaningful variables.
+  mutate(percentchange = round(percentchange*0.01, 3)) %>%# convert the percentage to an number that fits a percentage scale 0% to 100 % (0 to 1)
+  filter(year %in% c('2020', '2021', '2022', '2023'))
+```
+
+```{r forecast, echo=showcodeMode, message = debugMode, warning = debugMode}
+renderPlot({
+  CPIForecastLong %>%
+    filter(item == "All food") %>%
+  ggplot(mapping = aes(x = year,
+                       y = percentChange,
+                       fill = percentChange)) + 
+  geom_col() + theme(aspect.ratio = 0.11)
+})
+  inputPanel(
+  selectInput("cpiForecastItem", 
+              label = "Item of showing in Graph",
+              choices = unique(CPIForecastLong$item),
+              selected = "All food",
+              multiple = TRUE))
+  sliderInput("cpiForecastYear", label = "Year Range",
+              min = 1974, max = 2021, value = c(1974,2021), step = 1, sep = "")
 ```
