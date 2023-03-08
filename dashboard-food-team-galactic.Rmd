@@ -16,73 +16,14 @@ showcodeMode <- FALSE
 ```
 
 ```{r fields processing, include=showcodeMode, message = debugMode, warning = debugMode}
-CPIHistoricalData <- read_excel("historicalcpi.xlsx", skip = 1)
-CPIHistoricalDataRaw <- CPIHistoricalData %>%
-  remove_missing() %>%
-  mutate(`Consumer Price Index item` = as.factor(`Consumer Price Index item`)) %>%
-  mutate_if(is.character, as.numeric) %>% 
-  rename(cpiItem = `Consumer Price Index item`)
-#head(CPIHistoricalDataRaw)
-CPIHistoricalDataRaw$cpiItem
-CPIHistoricalDataRaw <- CPIHistoricalDataRaw %>% 
-  mutate(level = case_when((cpiItem %in% c('All food'))~ 1,
-                           (cpiItem %in% c('Food away from home','Food at home')) ~ 2,
-                           (cpiItem %in% c('Meats, poultry, and fish', 'Eggs', 'Dairy products', 'Fats and oils', 'Fruits and vegetables', 'Sugar and sweets','Cereals and bakery products', 'Nonalcoholic beverages', 'Other foods')) ~ 3,
-                           (cpiItem %in% c('Meats', 'Poultry', 'Fish and seafood', 'Fresh fruits and vegetables', 'Processed fruits and vegetables')) ~ 4,
-                           (cpiItem %in% c('Beef and veal', 'Pork', 'Other meats', 'Fresh fruits', 'Fresh vegetables')) ~ 5,
-                           TRUE ~ 0
-                           ),
-         level = as.factor(level)
-         )
-CPIHistoricalDataRaw %>% 
-  select(cpiItem, level) %>%
-  view()
-#head(CPIHistoricalDataRaw)
-CPIHistoricalLong <- CPIHistoricalDataRaw %>% 
-  pivot_longer(cols = !c(cpiItem, level)) %>%
-  rename(year = name, percentchange = value) %>% 
-  mutate(percentchange = round(percentchange*0.01, 3))
-#head(CPIHistoricalDataRaw)
-CPIHistoricalDataFrame <- read_excel("historicalcpi.xlsx", sheet = "df")
-head(CPIHistoricalDataFrame)
+#Historical Part
+CPIHistoricalDataRaw <- read_excel("CPIHistorical.xlsx", sheet = "raw")
+CPIHistoricalDataFrame <- read_excel("CPIHistorical.xlsx", sheet = "df")
 
 #Forecast Part
-CPIForecastData <- read_excel("CPIForecast.xlsx", skip = 1)
+CPIForecastDataRaw <- read_excel("CPIForecast.xlsx", sheet = "raw")
+CPIForecastDataFrame <- read_excel("CPIForecast.xlsx", sheet = "df")
 
-CPIForecastWide <- CPIForecastData %>% 
-  remove_missing() %>% # remove the unused columns
-  mutate(`Consumer Price Index item` = as.factor(`Consumer Price Index item`)) %>% #Convert the CPI items into factors
-  mutate_if(is.character, as.numeric) %>% # Convert any columns that were assumed to be characters into numeric. We Could have specified the data types in the read_excel but this conversion is intuitive compared to multiple complex arguments to load data.
-  rename(cpiItem = `Consumer Price Index item`) %>%#Rename the item column to something easier to code
-  select(cpiItem, `Annual 2020`, `Annual 2021`, `Annual 2022`, ...10, )
-  
-colnames(CPIForecastWide) <- c('cpiItem','2020', '2021', '2022', '2023')
-  
-
-warnings() # view the warnings which show the blank rows being removed and the "N/A" values being converted into NA.
-
-CPIForecastWide$cpiItem
-
-CPIForecastWide <- CPIForecastWide %>%
-  mutate(level = case_when((cpiItem %in% c('All food'))~ 1,
-                           (cpiItem %in% c('Food away from home','Food at home')) ~ 2,
-                           (cpiItem %in% c('Meats, poultry, and fish', 'Eggs', 'Dairy products', 'Fats and oils', 'Fruits and vegetables', 'Sugar and sweets','Cereals and bakery products', 'Nonalcoholic beverages', 'Other foods')) ~ 3,
-                           (cpiItem %in% c('Meats', 'Poultry', 'Fish and seafood', 'Fresh fruits and vegetables', 'Processed fruits and vegetables')) ~ 4,
-                           (cpiItem %in% c('Beef and veal', 'Pork', 'Other meats', 'Fresh fruits', 'Fresh vegetables')) ~ 5,
-                           TRUE ~ 0
-                           ),
-         level = as.factor(level) #convert the new values into a factor
-         )
-
-CPIForecastWide %>% # check to make sure each of the categories is at their appropriate level
-  select(cpiItem, level) %>%
-  view()
-
-CPIForecastLong <- CPIForecastWide %>% #Pivot the wide data set to minimize the number of columns, making it easier to visualize and create drill down functions.
-  pivot_longer(cols = !c(cpiItem, level)) %>%
-  rename(year = name, percentchange = value) %>% #rename the columns to meaningful variables.
-  mutate(percentchange = round(percentchange*0.01, 3)) %>%# convert the percentage to an number that fits a percentage scale 0% to 100 % (0 to 1)
-  filter(year %in% c('2020', '2021', '2022', '2023'))
 ```
 
 
@@ -92,7 +33,7 @@ The consumer price index (CPI), which monitors the change in prices consumers pa
 
 In addition to our previous data, we included the forecast CPI data for these same food categories. We would like to use this to visualize future predictions for changes in CPI. 
 
-## CPI Data {.tabset}
+## Consumer Price Index Data {.tabset}
 
 ### Historical CPI
 
@@ -102,62 +43,93 @@ renderPlot({
     filter(item == "All food") %>%
   ggplot(mapping = aes(x = year,
                        y = percentChange,
-                       fill = percentChange)) + 
-  geom_col() + theme(aspect.ratio = 0.11)
+                       fill = percentChange)) + theme_minimal() + 
+  geom_col() + theme(aspect.ratio = 0.11, legend.position = "none")
 })
-  inputPanel(
+
+inputPanel(
   selectInput("cpiHistoricalItem", 
               label = "Item of showing in Graph",
-              choices = unique(CPIHistoricalDataFrame$item),
-              selected = "All food",
+              #choices = unique(CPIForecastDataFrame$item),
+              choices = list('All Foods' = list("All food"),
+                             'Food in/out of Home' = list("Food away from home", "Food at home", "Eggs", "Dairy products", "Fats and oils"),
+                             'Meats Poultry & Fish' = list("Meats, poultry, and fish", "Meats", "Beef and veal", "Pork", "Other meats"),
+                             'Fruits & Vegetables' = list("Fruits and vegetables", "Fresh fruits and vegetables", "Fresh fruits", "Fresh vegetables", "Processed fruits and vegetables"),
+                             'Miscellaneous' = list("Sugar and sweets", "Cereals and bakery products","Nonalcoholic beverages","Other foods")),
+              selected = list("Food away from home", "Food at home"),
               multiple = TRUE),
   sliderInput("cpiHistoricalYear", label = "Year Range",
               min = 1974, max = 2021, value = c(1974,2021), step = 1, sep = ""),
 )
 
-
-
 renderPlot({
-    CPIHistoricalDataFrame %>%
-      filter(item %in% input$cpiHistoricalItem,
-             year >= min(input$cpiHistoricalYear[1]), 
-             year <= max(input$cpiHistoricalYear[2])) %>%
-    ggplot(mapping = aes(x = year,
-                         y = percentChange,
-                         color = item)) + 
-    geom_line() + guides(fill = TRUE) + 
-    theme(legend.position = "left") + 
-    labs(
-      x = NULL,
-      y = "Changes in Year",
-      title = "Historical CPI"
+ CPIHistoricalDataFrame %>%
+  filter(item %in% input$cpiHistoricalItem,
+         year >= min(input$cpiHistoricalYear[1]), 
+         year <= max(input$cpiHistoricalYear[2])) %>%
+  ggplot(mapping = aes(x = year,
+                       y = percentChange,
+                       color = item)) + 
+  geom_line() + geom_point() + guides(fill = TRUE) + 
+  theme_minimal() + theme(legend.position = "left") +
+
+  labs(x = NULL,
+       y = "Changes in Year",
+       title = "Historical CPI"
   )
 })
-head(CPIHistoricalDataRaw)
+
+renderDataTable({
+  CPIHistoricalDataFrame %>%
+    select(item, year, percentChange)
+    
+})
 
 ```
 
 ### Forecast CPI
 
-
-
-
-
 ```{r forecast, echo=showcodeMode, message = debugMode, warning = debugMode}
-renderPlot({
-  CPIForecastLong %>%
-    filter(item == "All food") %>%
-  ggplot(mapping = aes(x = year,
-                       y = percentChange,
-                       fill = percentChange)) + 
-  geom_col() + theme(aspect.ratio = 0.11)
-})
-  inputPanel(
+#renderPlot({
+#  CPIForecastDataFrame %>%
+#    filter(item == "All food") %>%
+#  ggplot(mapping = aes(x = year,
+#                       y = percentChange,
+#                       fill = percentChange)) + theme_minimal() + 
+#  geom_col() + theme(aspect.ratio = 0.11, legend.position = "none")
+#})
+
+inputPanel(
   selectInput("cpiForecastItem", 
               label = "Item of showing in Graph",
-              choices = unique(CPIForecastLong$item),
-              selected = "All food",
-              multiple = TRUE))
-  sliderInput("cpiForecastYear", label = "Year Range",
-              min = 1974, max = 2021, value = c(1974,2021), step = 1, sep = "")
+              #choices = unique(CPIForecastDataFrame$item),
+              choices = list('All Foods' = list("All food"),
+                             'Food in/out of Home' = list("Food away from home", "Food at home", "Eggs", "Dairy products", "Fats and oils"),
+                             'Meats Poultry & Fish' = list("Meats, poultry, and fish", "Meats", "Beef and veal", "Pork", "Other meats"),
+                             'Fruits & Vegetables' = list("Fruits and vegetables", "Fresh fruits and vegetables", "Fresh fruits", "Fresh vegetables", "Processed fruits and vegetables"),
+                             'Miscellaneous' = list("Sugar and sweets", "Cereals and bakery products","Nonalcoholic beverages","Other foods")),
+              selected = list("Food away from home", "Food at home"),
+              multiple = TRUE)
+)
+
+renderPlot({
+ CPIForecastDataFrame %>%
+  filter(item %in% input$cpiForecastItem) %>%
+  ggplot(mapping = aes(x = year,
+                       y = percentChange,
+                       fill = item)) + 
+  geom_boxplot() + #guides(fill = TRUE) + 
+  theme_minimal() + theme(legend.position = "left") +
+
+  labs(x = NULL,
+       y = "Changes in Year",
+       title = "Forecast CPI"
+  )
+})
+
+renderDataTable({
+  CPIForecastDataFrame %>%
+    select(item, year, percentChange)
+    
+})
 ```
