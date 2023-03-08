@@ -44,7 +44,7 @@ renderPlot({
   ggplot(mapping = aes(x = year,
                        y = percentChange,
                        fill = percentChange)) + theme_minimal() + 
-  geom_col() + theme(aspect.ratio = 0.11, legend.position = "none")
+  geom_col() + theme(legend.position = "none")
 })
 
 inputPanel(
