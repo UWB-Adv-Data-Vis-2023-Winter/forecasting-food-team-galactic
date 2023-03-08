@@ -13,7 +13,7 @@ The data dashboard challenge for the Winter 2023 BIS 412 Advanced Data Visualiza
 ## Team Galactic's Data Dashboard
 
 This data dashboard was authored by Sharmarke Mohamud, Evan Cho and Yucheng (Mars) Liu.
-We created two graphs to show the historical Consumer Price Index(CPI) from 1973-2021 and  second  graph a future for CPI forecast. The Data we used for our graphs was provided by the USDA. The historical CPI helps consumers see the price increases over the last 5 decades while the forecast gives consumers the potential price increases in the future 
+We created two graphs to show the historical Consumer Price Index (CPI) from 1974-2021 and a second graph for the future CPI forecast. The data we used for our graphs was provided by the USDA. The historical CPI helps consumers see the price increases over the last 5 decades while the forecast gives consumers the potential price increases in the future 
 
 ## Learning objectives 
 
