@@ -46,7 +46,7 @@ renderPlot({
     filter(item == "All food") %>%
   ggplot(mapping = aes(x = year,
                        y = percentChange,
-                       fill = percentChange)) + theme_minimal() + 
+                       fill = percentChange)) + theme_minimal() + scale_fill_gradient(high = "#29308F", low = "#90C9FA") +
   geom_col() + theme(legend.position = "none")
 })
 
@@ -121,7 +121,7 @@ renderPlot({
   ggplot(mapping = aes(x = year,
                        y = percentChange,
                        fill = item)) + 
-  geom_boxplot() + #guides(fill = TRUE) + 
+  geom_col(position = "dodge") + #guides(fill = TRUE) + 
   theme_minimal() + theme(legend.position = "left") +
 
   labs(x = NULL,
