@@ -88,6 +88,10 @@ CPIForecastLong <- CPIForecastWide %>% #Pivot the wide data set to minimize the 
 
 ## Introduction
 
+The consumer price index (CPI), which monitors the change in prices consumers pay for food, is very important for the nourishment and survival of our species. Our data was gathered by the USDA and showcases the CPI changes in food categories from 1974-2021. Understanding the changes in the CPI helps us look at food prices, insecurity, nutrition, and more. From our graphs, we would like to show the fluctuation in these food prices within each year, spanning from 1974-2021. As far as limitations, we assume that food is a global resource that is useful to everyone. However, we do not see that bias as a destructive force that changed our dashboard in any way. For methods and further information about the data, our group urges you to look at their website for more information found in the README file. 
+
+In addition to our previous data, we included the forecast CPI data for these same food categories. We would like to use this to visualize future predictions for changes in CPI. 
+
 ## CPI Data {.tabset}
 
 ### Historical CPI
