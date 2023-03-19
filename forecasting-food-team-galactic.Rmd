@@ -1,0 +1,67 @@
+---
+title: "Food"
+author: "Sharmarke, Evan & Mars"
+date: "2023-2-24"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse,readxl,shiny,dplyr,gapminder)
+
+debugMode <- TRUE
+showcodeMode <- FALSE
+
+```
+
+```{r fields processing, include=showcodeMode, message = debugMode, warning = debugMode}
+CPIHistoricalDataFrame <- read_excel("historicalcpi.xlsx", sheet = "df")
+head(CPIHistoricalDataFrame)
+```
+
+
+## Introduction
+
+## CPI Data {.tabset}
+
+### Historical CPI
+
+```{r historical, echo=showcodeMode, message = debugMode, warning = debugMode}
+
+inputPanel(
+  selectInput("cpiHistoricalItem", 
+              label = "Item of showing in Graph",
+              choices = unique(CPIHistoricalDataFrame$item),
+              selected = "All food",
+              multiple = TRUE),
+  sliderInput("cpiHistoricalYear", label = "Year Range",
+              min = 1974, max = 2021, value = c(1974,2021), step = 1),
+)
+
+renderPlot({
+  ggplot(data = CPIHistoricalDataFrame,
+       mapping = aes(x = year,
+                     y = percentChange,
+                     color = item)) + 
+  geom_col() + guides(fill = FALSE) + 
+  theme(legend.position = "left") + 
+  labs(
+    x = NULL,
+    y = "Changes in Year",
+    title = "Historical CPI"
+  )
+})
+renderDataTable(
+  CPIHistoricalDataFrame$item %>%
+  filter(item %in% input$cpiHistoricalItem)
+)
+head(CPIHistoricalDataFrame)
+
+```
+
+### Forecast CPI
+
+```{r forecast, echo=showcodeMode, message = debugMode, warning = debugMode}
+
+```

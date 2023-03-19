@@ -1,0 +1,138 @@
+---
+title: "CPI Flucuations in Food"
+author: "Sharmarke, Evan & Mars"
+date: "2023-2-24"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse,readxl,shiny,dplyr,gapminder)
+
+debugMode <- TRUE
+showcodeMode <- FALSE
+
+```
+
+```{r fields processing, include=showcodeMode, message = debugMode, warning = debugMode}
+#Historical Part
+CPIHistoricalDataRaw <- read_excel("CPIHistorical.xlsx", sheet = "raw")
+CPIHistoricalDataFrame <- read_excel("CPIHistorical.xlsx", sheet = "df")
+
+#Forecast Part
+CPIForecastDataRaw <- read_excel("CPIForecast.xlsx", sheet = "raw")
+CPIForecastDataFrame <- read_excel("CPIForecast.xlsx", sheet = "df")
+
+```
+
+
+## Introduction
+
+The consumer price index (CPI), which monitors the change in prices consumers pay for food, is very important for the nourishment and survival of our species. Our data was gathered by the USDA and showcases the CPI changes in food categories from 1974-2021. We hope that the data can be applied to understanding the cause and effects that CPI can have on food prices and the economy. Understanding the changes in the CPI helps us look at food prices, inflation, insecurity, nutrition, and more. From our graphs, we would like to show the fluctuation in these food prices within each year, spanning from 1974-2021. As far as limitations, we assume that food is a global resource that is useful to everyone. However, we do not see that bias as a destructive force that changed our dashboard in any way.
+
+In addition to our previous data, we included the forecast CPI data for these same food categories. We would like to use this to visualize future predictions for changes in CPI. We will be pulling data from each food category from 2020-2023 to help us gather data regarding the future CPI for such food categories. By looking at our graphs, we hope that people can see how previous data from previous years can help us predict what the next year’s CPI changes will be. 
+
+For clarification on the food categories, all food contains every food category. Food away from home is a category in itself. Food at home contains meats, poultry, fish, eggs, dairy, fats and oils, fruits and vegetables, sugars, cereals, beverages, and other foods. Meats, poultry, and fish contain the food categories names in that order, with meats containing beef, veal, pork and other meats. Fruits and vegetables contain fresh and processed fruits/vegetables. Lastly, we highlighted miscellaneous foods such as sugars, sweets, cereals, bakery products, beverages, and other foods.  For methods and further information about the data, our group urges you to look at the USDA website for more information found in the README file. 
+
+
+## Consumer Price Index Data {.tabset}
+
+### Historical CPI
+
+```{r historical, echo=showcodeMode, message = debugMode, warning = debugMode}
+renderPlot({
+  CPIHistoricalDataFrame %>%
+    filter(item == "All food") %>%
+  ggplot(mapping = aes(x = year,
+                       y = percentChange,
+                       fill = percentChange)) + theme_minimal() + scale_fill_gradient(high = "#29308F", low = "#90C9FA") +
+  geom_col() + theme(legend.position = "none")
+})
+
+inputPanel(
+  selectInput("cpiHistoricalItem", 
+              label = "Item of showing in Graph",
+              #choices = unique(CPIForecastDataFrame$item),
+              choices = list('All Foods' = list("All food"),
+                             'Food in/out of Home' = list("Food away from home", "Food at home", "Eggs", "Dairy products", "Fats and oils"),
+                             'Meats Poultry & Fish' = list("Meats, poultry, and fish", "Meats", "Beef and veal", "Pork", "Other meats"),
+                             'Fruits & Vegetables' = list("Fruits and vegetables", "Fresh fruits and vegetables", "Fresh fruits", "Fresh vegetables", "Processed fruits and vegetables"),
+                             'Miscellaneous' = list("Sugar and sweets", "Cereals and bakery products","Nonalcoholic beverages","Other foods")),
+              selected = list("Food away from home", "Food at home"),
+              multiple = TRUE),
+  sliderInput("cpiHistoricalYear", label = "Year Range",
+              min = 1974, max = 2021, value = c(1974,2021), step = 1, sep = ""),
+)
+
+renderPlot({
+ CPIHistoricalDataFrame %>%
+  filter(item %in% input$cpiHistoricalItem,
+         year >= min(input$cpiHistoricalYear[1]), 
+         year <= max(input$cpiHistoricalYear[2])) %>%
+  ggplot(mapping = aes(x = year,
+                       y = percentChange,
+                       color = item)) + 
+  geom_line() + geom_point() + guides(fill = TRUE) + 
+  theme_minimal() + theme(legend.position = "left") +
+
+  labs(x = NULL,
+       y = "Changes in Year",
+       title = "Historical CPI"
+  )
+})
+
+renderDataTable({
+  CPIHistoricalDataFrame %>%
+    select(item, year, percentChange)
+    
+})
+
+```
+
+### Forecast CPI
+
+```{r forecast, echo=showcodeMode, message = debugMode, warning = debugMode}
+#renderPlot({
+#  CPIForecastDataFrame %>%
+#    filter(item == "All food") %>%
+#  ggplot(mapping = aes(x = year,
+#                       y = percentChange,
+#                       fill = percentChange)) + theme_minimal() + 
+#  geom_col() + theme(aspect.ratio = 0.11, legend.position = "none")
+#})
+
+inputPanel(
+  selectInput("cpiForecastItem", 
+              label = "Item of showing in Graph",
+              #choices = unique(CPIForecastDataFrame$item),
+              choices = list('All Foods' = list("All food"),
+                             'Food in/out of Home' = list("Food away from home", "Food at home", "Eggs", "Dairy products", "Fats and oils"),
+                             'Meats Poultry & Fish' = list("Meats, poultry, and fish", "Meats", "Beef and veal", "Pork", "Other meats"),
+                             'Fruits & Vegetables' = list("Fruits and vegetables", "Fresh fruits and vegetables", "Fresh fruits", "Fresh vegetables", "Processed fruits and vegetables"),
+                             'Miscellaneous' = list("Sugar and sweets", "Cereals and bakery products","Nonalcoholic beverages","Other foods")),
+              selected = list("Food away from home", "Food at home"),
+              multiple = TRUE)
+)
+
+renderPlot({
+ CPIForecastDataFrame %>%
+  filter(item %in% input$cpiForecastItem) %>%
+  ggplot(mapping = aes(x = year,
+                       y = percentChange,
+                       fill = item)) + 
+  geom_col(position = "dodge") + #guides(fill = TRUE) + 
+  theme_minimal() + theme(legend.position = "left") +
+
+  labs(x = NULL,
+       y = "Changes in Year",
+       title = "Forecast CPI"
+  )
+})
+
+renderDataTable({
+  CPIForecastDataFrame %>%
+    select(item, year, percentChange)
+    
+})
+```
